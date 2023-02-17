@@ -68,7 +68,7 @@ public:
 
     Flow    flow(FlowRole role) const;
     Flow    flow(FlowRole role, double layer_height) const;
-    Flow    bridging_flow(FlowRole role, bool thick_bridge = false) const;
+    Flow    bridging_flow(FlowRole role, bool thick_bridge = false , float bridge_density = 1.0f) const;
 
     void    slices_to_fill_surfaces_clipped();
     void    prepare_fill_surfaces();
@@ -260,8 +260,8 @@ public:
     {
         ExPolygon *area;
         int        type;
-        int        dist_to_top;
-        AreaGroup(ExPolygon *a, int t, int d) : area(a), type(t), dist_to_top(d) {}
+        coordf_t   dist_to_top; // mm dist to top
+        AreaGroup(ExPolygon *a, int t, coordf_t d) : area(a), type(t), dist_to_top(d) {}
     };
     std::vector<AreaGroup> area_groups;
 

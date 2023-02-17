@@ -1,12 +1,54 @@
 
 # Bambu Studio - SoftFever
 A modified version of Bambu Studio with many handy features.   
-It's fully compatible with Bambulab X1/X1-C printers.
-It also supports Voron and Prusa MK3S printers.  
+It's fully compatible with Bambulab X1/X1-C/P1P printers.
+It also supports Anycubic, Anker, Creality, Prusa MK3S, RatRig and Voron printers.  
 You can download it here: https://github.com/SoftFever/BambuStudio-SoftFever/releases
 
 ## BambuStudio SoftFever change notes:
 
+### [V1.4.2 changes](https://github.com/SoftFever/BambuStudio-SoftFever/releases/tag/v1.4.2):
+- Change the color theme :)
+- Fixed a crash issue when selecting vase mode on some machines
+- Port firmware retraction and Extra length on restart retraction feature from PrusaSlicer
+- Fine-tune calibration features
+   1. Enforce max volumetric speed in PA line mode
+   2. Ensure print speeds are consistent across all blocks in the flow-rate calibration process. This is to help users calibrate those challenging filaments(such as TPU) by minimizing the influence of printing speed - thanks @psiberfunk for his input on this
+- New printer models: thanks @erebus04 and @GP3D84
+   1. Tronxy X5SA 400
+   2. Artillery Sidewinder
+- QoL:
+   1. Now allow exporting g-code for BBL printers
+   2. Fixed a bug that printer connection info was removed after loading a 3mf project
+fixed an issue that user presets were not loaded when Auto sync user preset option was off in Preference.
+   3.Germany language translation - thanks @hliebscher
+- Misc fixes:
+   1. Exit calibration mode when a new model is added to the scene(creating a new project after calibration is recommended)
+   2. Skip emitting M106 P2 command if the auxiliary fan is not enabled.
+   3. Fix an issue that previously there was a z-fighting issue when bed models are used for 3rd party printers
+   4. Fixed an issue that max volumetric speed was not correctly calculated if flow-rate was changed per object.
+   5. CICD for Linux build - thanks @fang64
+Known issues:
+
+The Calibration menu is missing on some Mac machines. Try restarting the App can usually fix it. See [#120](https://github.com/SoftFever/BambuStudio-SoftFever/issues/120)
+
+### [V1.4.1 changes](https://github.com/SoftFever/BambuStudio-SoftFever/releases/tag/v1.4.1):
+- Added a feature for checking and displaying a notification for a new version
+- Added RatRig printer profiles, thanks @erebus04 for working this
+- Added support for the Creality CR-10 Max and Anker M5 printers.
+- Fixed the issue with profile cloud syncing for third-party printers.
+- set inner_wall_acceleration to 5000 for Bambu printers
+- Added support for the first_layer_bed_temperature and first_layer_temperature variables for better compatibility."
+- Fixed a crashing bug when adding text Mac Intel machine
+- QoL improvements for naming logic:
+   1. The filename format is now supported when exporting 3mf files.
+   2. If the project is not defined, the model name will be used as the output name.
+   3. The "Untitled" string will no longer be added if the project name is set.
+   4. The "_plate_0" string has been removed from the file name if there is only one plate.
+
+<details>
+  <summary> 👉 "Click here" for OLD Release Note</summary>   
+  
 ### [V1.4.0 changes](https://github.com/SoftFever/BambuStudio-SoftFever/releases/tag/v1.4.0):
 - Add Layer Time/Layer time(Log) display (NOTE: need more tweaking work for BBL printers as the layer time is skewed by the preparing time)
 - Add `sandwich`(inner-outer-inner-infill) mode support for Arachne engine.
@@ -19,6 +61,7 @@ You can download it here: https://github.com/SoftFever/BambuStudio-SoftFever/rel
    1.  Can't send sliced files to printers
    2.  AMS filaments were added to non-Bambulab printers
    3. Wrong bed setting was applied
+  
 ### [V1.3.4 changes](https://github.com/SoftFever/BambuStudio-SoftFever/releases/tag/v1.3.4):
 1. Add a new printer order - sandwich mode:
 This new order is similar to the outer-wall-first mode in achieving the best dimensional accuracy. This new approach however avoids printing outer walls right after a long travel, which may cause artifacts on the surface in many cases.
@@ -92,6 +135,7 @@ You might want to reduce speed for small perimeter parts to prevent failures lik
 4. Support single wall mode on first layer
 5. Support Chamber temperature. This setting can be use in machine start G-Gcode
 6. Support thumbview for third-party printers
+</details>
 
 Demo video: https://youtu.be/vSNE9iGj2II  
  
@@ -161,12 +205,14 @@ ARC movement are supported by default.
 
 # Gallery
 ![image](./SoftFever_doc/accelerations.png)
-![image](./SoftFever_doc/printers1.png)  
-![image](./SoftFever_doc/printers2.png)  
-![image](./SoftFever_doc/printers3.png)  
-![image](./SoftFever_doc/printers4.png)  
-![image](./SoftFever_doc/voron.png)  
-
+![image](./SoftFever_doc/BambuLab.png)  
+![image](./SoftFever_doc/Anker.png)  
+![image](./SoftFever_doc/Anycubic.png)  
+![image](./SoftFever_doc/Creality.png)  
+![image](./SoftFever_doc/Prusa.png)  
+![image](./SoftFever_doc/RatRig.png)  
+![image](./SoftFever_doc/Voron_1.png)  
+![image](./SoftFever_doc/Voron_2.png) 
 
 
 Image credits: 

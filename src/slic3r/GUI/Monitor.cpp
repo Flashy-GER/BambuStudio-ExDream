@@ -324,7 +324,7 @@ void MonitorPanel::on_printer_clicked(wxMouseEvent &event)
         wxPoint pos = m_side_tools->ClientToScreen(wxPoint(0, 0));
         pos.y += m_side_tools->GetRect().height;
         //pos.x = pos.x < 0? 0:pos.x;
-        m_select_machine.Position(pos, wxSize(0, 0));
+        m_select_machine.Move(pos);
 
 #ifdef __linux__
         m_select_machine.SetSize(wxSize(m_side_tools->GetSize().x, -1));
@@ -536,8 +536,8 @@ void MonitorPanel::show_status(int status)
     } else if ((status & (int) MonitorStatus::MONITOR_CONNECTING) != 0) {
         m_hyperlink->Hide();
         m_connection_info->SetLabel(_L("Connecting..."));
-        m_connection_info->SetBackgroundColor(wxColour(0, 174, 66));
-        m_connection_info->SetBorderColor(wxColour(0, 174, 66));
+        m_connection_info->SetBackgroundColor(wxColour(0, 150, 136));
+        m_connection_info->SetBorderColor(wxColour(0, 150, 136));
         m_connection_info->Show();
     }
 

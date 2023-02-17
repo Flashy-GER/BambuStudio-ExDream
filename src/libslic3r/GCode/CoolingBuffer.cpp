@@ -401,7 +401,7 @@ std::vector<PerExtruderAdjustments> CoolingBuffer::parse_layer_gcode(const std::
             }
             if ((line.type & CoolingLine::TYPE_G92) == 0) {
                 //BBS: G0, G1, G2, G3. Calculate the duration.
-                if (RELATIVE_E_AXIS)
+                if (m_config.use_relative_e_distances.value)
                     // Reset extruder accumulator.
                     current_pos[3] = 0.f;
                 float dif[4];
@@ -775,9 +775,9 @@ std::string CoolingBuffer::apply_layer_cooldown(
                 new_gcode  += GCodeWriter::set_fan(m_config.gcode_flavor, m_fan_speed);
         }
         //BBS
-        if (additional_fan_speed_new != m_additional_fan_speed && m_config.auxiliary_fan.value) {
+        if (additional_fan_speed_new != m_additional_fan_speed) {
             m_additional_fan_speed = additional_fan_speed_new;
-            if (immediately_apply)
+            if (immediately_apply && m_config.auxiliary_fan.value)
                 new_gcode += GCodeWriter::set_additional_fan(m_additional_fan_speed);
         }
     };

@@ -7,9 +7,9 @@
 
 namespace Slic3r {
 
-    calib_pressure_advance::calib_pressure_advance(GCode* gcodegen) :mp_gcodegen(gcodegen), m_length_short(20.0), m_length_long(40.0), m_space_y(3.5) {}
+    calib_pressure_advance::calib_pressure_advance(GCode* gcodegen) :mp_gcodegen(gcodegen), m_length_short(20.0), m_length_long(40.0), m_space_y(3.5), m_line_width(0.6), m_draw_numbers(true) {}
 
-    std::string calib_pressure_advance::generate_test(double start_pa/*= 0*/, double step_pa /*= 0.005*/, int count/*= 10*/) {
+    std::string calib_pressure_advance::generate_test(double start_pa/*= 0*/, double step_pa /*= 0.002*/, int count/*= 10*/) {
         auto bed_sizes = mp_gcodegen->config().printable_area.values;
         auto w = bed_sizes[2].x() - bed_sizes[0].x();
         auto h = bed_sizes[2].y() - bed_sizes[0].y();
@@ -32,11 +32,14 @@ namespace Slic3r {
     std::string calib_pressure_advance::print_pa_lines(double start_x, double start_y, double start_pa, double step_pa, int num) {
 
         auto& writer = mp_gcodegen->writer();
-        const double e_calib = 0.05; // filament_mm/extrusion_mm
-        const double e = 0.038; // filament_mm/extrusion_mm
+        Flow line_flow = Flow(m_line_width, 0.2, mp_gcodegen->config().nozzle_diameter.get_at(0));
+        Flow thin_line_flow = Flow(0.44, 0.2, mp_gcodegen->config().nozzle_diameter.get_at(0));
+        const double e_calib = line_flow.mm3_per_mm() / 2.40528; // filament_mm/extrusion_mm
+        const double e = thin_line_flow.mm3_per_mm() / 2.40528; // filament_mm/extrusion_mm
 
-        const double fast = mp_gcodegen->config().get_abs_value("outer_wall_speed") * 60.0;
-        const double slow = std::max(1200.0, fast * 0.1);
+
+        const double fast = m_fast_speed * 60.0;
+        const double slow = m_slow_speed * 60.0;
         std::stringstream gcode;
         gcode << mp_gcodegen->writer().travel_to_z(0.2);
         double y_pos = start_y;
@@ -61,17 +64,17 @@ namespace Slic3r {
         }
         gcode << writer.set_pressure_advance(0.0);
 
-        // draw indicator lines
-        gcode << writer.set_speed(fast);
-        gcode << move_to(Vec2d(start_x + m_length_short, y_pos + (num - 1) * m_space_y + 2));
-        gcode << writer.extrude_to_xy(Vec2d(start_x + m_length_short, y_pos + (num - 1) * m_space_y + 7), e * 7);
-        gcode << move_to(Vec2d(start_x + m_length_short + m_length_long, y_pos + (num - 1) * m_space_y + 7));
-        gcode << writer.extrude_to_xy(Vec2d(start_x + m_length_short + m_length_long, y_pos + (num - 1) * m_space_y + 2), e * 7);
+        if (m_draw_numbers) {
+            // draw indicator lines
+            gcode << writer.set_speed(fast);
+            gcode << move_to(Vec2d(start_x + m_length_short, y_pos + (num - 1) * m_space_y + 2));
+            gcode << writer.extrude_to_xy(Vec2d(start_x + m_length_short, y_pos + (num - 1) * m_space_y + 7), e * 7);
+            gcode << move_to(Vec2d(start_x + m_length_short + m_length_long, y_pos + (num - 1) * m_space_y + 7));
+            gcode << writer.extrude_to_xy(Vec2d(start_x + m_length_short + m_length_long, y_pos + (num - 1) * m_space_y + 2), e * 7);
 
-
-        for (int i = 0; i < num; i += 2) {
-            gcode << draw_number(start_x + m_length_short + m_length_long + m_length_short + 3, y_pos + i * m_space_y + m_space_y / 2, start_pa + i * step_pa);
-
+            for (int i = 0; i < num; i += 2) {
+                gcode << draw_number(start_x + m_length_short + m_length_long + m_length_short + 3, y_pos + i * m_space_y + m_space_y / 2, start_pa + i * step_pa);
+            }
         }
         return gcode.str();
     }
@@ -81,9 +84,10 @@ namespace Slic3r {
         auto& writer = mp_gcodegen->writer();
         std::stringstream gcode;
         const double lw = 0.48;
+        Flow line_flow = Flow(lw, 0.2, mp_gcodegen->config().nozzle_diameter.get_at(0));
         const double len = 2;
         const double gap = lw / 2.0;
-        const double e = 0.04; // filament_mm/extrusion_mm
+        const double e = line_flow.mm3_per_mm() / 2.40528; // filament_mm/extrusion_mm
 
         //  0-------1 
         //  |       |
@@ -199,4 +203,5 @@ namespace Slic3r {
 
         return gcode.str();
     }
+    Calib_Params::Calib_Params() : mode(CalibMode::Calib_None) {}
 } // namespace Slic3r

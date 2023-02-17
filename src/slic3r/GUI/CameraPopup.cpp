@@ -161,6 +161,7 @@ wxWindow* CameraPopup::create_item_radiobox(wxString title, wxWindow* parent, wx
         });
 
     wxStaticText *text = new wxStaticText(item, wxID_ANY, title, wxDefaultPosition, wxDefaultSize);
+    text->SetForegroundColour(*wxBLACK);
     resolution_texts.push_back(text);
     text->SetPosition(wxPoint(padding_left + radiobox->GetSize().GetWidth() + 10, (item->GetSize().GetHeight() - text->GetSize().GetHeight()) / 2));
     text->SetFont(Label::Body_13);
@@ -257,17 +258,23 @@ void CameraPopup::check_func_supported()
 
     allow_alter_resolution = (m_obj->is_function_supported(PrinterFunction::FUNC_ALTER_RESOLUTION) && m_obj->has_ipcam);
 
+    //check u2 version
+    DeviceManager* dev = Slic3r::GUI::wxGetApp().getDeviceManager();
+    if (!dev) return;
+    MachineObject* obj = dev->get_selected_machine();
+    if (!obj) return;
+
     //resolution supported
     std::vector<std::string> resolution_supported = m_obj->get_resolution_supported();
     auto support_count = resolution_supported.size();
     for (int i = 0; i < (int)RESOLUTION_OPTIONS_NUM; ++i){
         auto curr_res = to_resolution_msg_string(CameraResolution(i));
         std::vector <std::string> ::iterator it = std::find(resolution_supported.begin(), resolution_supported.end(), curr_res);
-        if ((it == resolution_supported.end())||(support_count <= 1))
+        if ((it == resolution_supported.end())||(support_count <= 1) || !obj->is_support_1080dpi)
             m_resolution_options[i] -> Hide();
     }
     //hide resolution if there is only one choice
-    if (support_count <= 1) {
+    if (support_count <= 1 || !obj->is_support_1080dpi) {
         m_text_resolution->Hide();
     }
 }

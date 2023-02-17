@@ -456,7 +456,9 @@ void AuFile::on_set_cover()
 {
     if (wxGetApp().plater()->model().model_info == nullptr) { wxGetApp().plater()->model().model_info = std::make_shared<ModelInfo>(); }
 
-    wxGetApp().plater()->model().model_info->cover_file = m_file_name.ToStdString();
+    fs::path path(into_path(m_file_name));
+    wxGetApp().plater()->model().model_info->cover_file = path.string();
+    //wxGetApp().plater()->model().model_info->cover_file = m_file_name.ToStdString();
 
     auto full_path          = m_file_path.branch_path();
     auto full_root_path         = full_path.branch_path();
@@ -696,7 +698,8 @@ void AuFolderPanel::update_cover()
     if (wxGetApp().plater()->model().model_info != nullptr) {
         for (auto i = 0; i < m_aufiles_list.GetCount(); i++) {
             AuFiles *aufile = m_aufiles_list[i];
-            if (wxGetApp().plater()->model().model_info->cover_file == aufile->file->m_file_name) {
+
+            if (wxString::FromUTF8(wxGetApp().plater()->model().model_info->cover_file) == aufile->file->m_file_name) {
                 aufile->file->set_cover(true);
             } else {
                 aufile->file->set_cover(false);
@@ -1098,6 +1101,7 @@ void AuxiliaryPanel::update_all_cover()
 
      auto m_text_designer = new wxStaticText(this, wxID_ANY, _L("Author"), wxDefaultPosition, wxSize(120, -1), 0);
      m_text_designer->Wrap(-1);
+     m_text_designer->SetForegroundColour(*wxBLACK);
      m_sizer_designer->Add(m_text_designer, 0, wxALIGN_CENTER, 0);
 
      m_input_designer =  new ::TextInput(this, wxEmptyString, wxEmptyString, wxEmptyString, wxDefaultPosition, wxSize(FromDIP(450), FromDIP(30)), wxTE_PROCESS_ENTER);
@@ -1108,6 +1112,7 @@ void AuxiliaryPanel::update_all_cover()
      wxBoxSizer *m_sizer_model_name = new wxBoxSizer(wxHORIZONTAL);
 
      auto m_text_model_name = new wxStaticText(this, wxID_ANY, _L("Model Name"), wxDefaultPosition, wxSize(120, -1), 0);
+     m_text_model_name->SetForegroundColour(*wxBLACK);
      m_text_model_name->Wrap(-1);
      m_sizer_model_name->Add(m_text_model_name, 0, wxALIGN_CENTER, 0);
 

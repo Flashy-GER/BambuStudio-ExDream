@@ -679,7 +679,11 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "only_one_wall_first_layer"
             || opt_key == "initial_layer_line_width"
             || opt_key == "inner_wall_line_width"
-            || opt_key == "infill_wall_overlap") {
+            || opt_key == "infill_wall_overlap"
+            || opt_key == "seam_gap"
+            || opt_key == "role_based_wipe_speed"
+            || opt_key == "wipe_on_loops"
+            || opt_key == "wipe_speed") {
             steps.emplace_back(posPerimeters);
         } else if (opt_key == "gap_infill_speed"
             || opt_key == "filter_out_gap_fill" ) {
@@ -821,10 +825,12 @@ bool PrintObject::invalidate_state_by_config_options(
             || opt_key == "detect_overhang_wall"
             //BBS
             || opt_key == "enable_overhang_speed"
-            || opt_key == "detect_thin_wall") {
+            || opt_key == "detect_thin_wall"
+            || opt_key == "precise_outer_wall"
+            || opt_key == "overhang_speed_classic") {
             steps.emplace_back(posPerimeters);
             steps.emplace_back(posSupportMaterial);
-        } else if (opt_key == "bridge_flow") {
+        } else if (opt_key == "bridge_flow" || opt_key == "bridge_density") {
             if (m_config.support_top_z_distance > 0.) {
             	// Only invalidate due to bridging if bridging is enabled.
             	// If later "support_top_z_distance" is modified, the complete PrintObject is invalidated anyway.
@@ -2814,7 +2820,7 @@ void PrintObject::project_and_append_custom_facets(
 {
     // BBS: Approve adding enforcer support on vertical faces
     SlabSlicingConfig config;
-    config.isVertical = true;
+    config.isVertical = type == EnforcerBlockerType::ENFORCER ? true : false;
 
     for (const ModelVolume* mv : this->model_object()->volumes)
         if (mv->is_model_part()) {
@@ -2871,7 +2877,11 @@ const Layer *PrintObject::get_first_layer_bellow_printz(coordf_t print_z, coordf
     auto it = Slic3r::lower_bound_by_predicate(m_layers.begin(), m_layers.end(), [limit](const Layer *layer) { return layer->print_z < limit; });
     return (it == m_layers.begin()) ? nullptr : *(--it);
 }
-
+int PrintObject::get_layer_idx_get_printz(coordf_t print_z, coordf_t epsilon) {
+    coordf_t limit = print_z + epsilon;
+    auto     it    = Slic3r::lower_bound_by_predicate(m_layers.begin(), m_layers.end(), [limit](const Layer *layer) { return layer->print_z < limit; });
+    return (it == m_layers.begin()) ? -1 : std::distance(m_layers.begin(), it);
+}
 // BBS
 const Layer* PrintObject::get_layer_at_bottomz(coordf_t bottom_z, coordf_t epsilon) const {
     coordf_t limit_upper = bottom_z + epsilon;

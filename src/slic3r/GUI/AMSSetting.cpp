@@ -200,6 +200,11 @@ void AMSSetting::create()
     m_panel_img->Layout();
     m_sizer_img->Fit(m_panel_img);
 
+    m_sizer_remain_block = new wxBoxSizer(wxVERTICAL); 
+    m_sizer_remain_block->Add(m_sizer_remain, 0, wxEXPAND | wxTOP, FromDIP(8));
+    m_sizer_remain_block->Add(0, 0, 0, wxTOP, 8);
+    m_sizer_remain_block->Add(m_sizer_remain_tip, 0, wxLEFT, 18);
+    m_sizer_remain_block->Add(0, 0, 0, wxTOP, 15);
 
     m_sizerl_body->Add(m_sizer_Insert_material, 0, wxEXPAND, 0);
     m_sizerl_body->Add(0, 0, 0, wxTOP, 8);
@@ -209,10 +214,7 @@ void AMSSetting::create()
     m_sizerl_body->Add(0, 0, 0, wxTOP, 8);
     m_sizerl_body->Add(m_sizer_starting_tip, 0, wxLEFT, 18);
     m_sizerl_body->Add(0, 0, 0, wxTOP, 15);
-    m_sizerl_body->Add(m_sizer_remain, 0, wxEXPAND | wxTOP, FromDIP(8));
-    m_sizerl_body->Add(0, 0, 0, wxTOP, 8);
-    m_sizerl_body->Add(m_sizer_remain_tip, 0, wxLEFT, 18);
-    m_sizerl_body->Add(0, 0, 0, wxTOP, 15);
+    m_sizerl_body->Add(m_sizer_remain_block, 0, wxEXPAND, 0);
     m_sizerl_body->Add(m_sizer_switch_filament, 0, wxEXPAND | wxTOP, FromDIP(8));
     m_sizerl_body->Add(0, 0, 0, wxTOP, 8);
     m_sizerl_body->Add(m_sizer_switch_filament_tip, 0, wxLEFT, 18);
@@ -231,6 +233,17 @@ void AMSSetting::create()
 
     this->Centre(wxBOTH);
     wxGetApp().UpdateDlgDarkUI(this);
+
+    Bind(wxEVT_SHOW, [this](auto& e) {
+        if (this->IsShown()) {
+            if (ams_support_remain) {
+                m_sizer_remain_block->Show(true);
+            }
+            else {
+                m_sizer_remain_block->Show(false);
+            }
+        }   
+    });
 }
 
 void AMSSetting::update_insert_material_read_mode(bool selected)
@@ -369,6 +382,7 @@ wxString AMSSetting::append_title(wxString text)
 {
     wxString lab;
     auto *   widget = new wxStaticText(m_panel_body, wxID_ANY, text, wxDefaultPosition, wxDefaultSize, wxALIGN_LEFT);
+    widget->SetForegroundColour(*wxBLACK);
     widget->Wrap(AMS_SETTING_BODY_WIDTH);
     widget->SetMinSize(wxSize(AMS_SETTING_BODY_WIDTH, -1));
     lab = widget->GetLabel();

@@ -267,7 +267,7 @@ void GLGizmoFdmSupports::on_render_input_window(float x, float y, float bottom_l
             ImGui::PushStyleColor(ImGuiCol_Button, m_is_dark_mode ? ImVec4(43 / 255.0f, 64 / 255.0f, 54 / 255.0f, 1.00f) : ImVec4(0.86f, 0.99f, 0.91f, 1.00f)); // r, g, b, a
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, m_is_dark_mode ? ImVec4(43 / 255.0f, 64 / 255.0f, 54 / 255.0f, 1.00f) : ImVec4(0.86f, 0.99f, 0.91f, 1.00f));
             ImGui::PushStyleColor(ImGuiCol_ButtonActive, m_is_dark_mode ? ImVec4(43 / 255.0f, 64 / 255.0f, 54 / 255.0f, 1.00f) : ImVec4(0.86f, 0.99f, 0.91f, 1.00f));
-            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.00f, 0.68f, 0.26f, 1.00f));
+            ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(0.00f, 0.59f, 0.53f, 1.00f));
             ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0);
             ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 1.0);
         }
@@ -540,10 +540,7 @@ int GLGizmoFdmSupports::get_selection_support_threshold_angle()
     SupportType support_type = obj_cfg.option("support_type") ? obj_cfg.opt_enum<SupportType>("support_type") : glb_cfg.opt_enum<SupportType>("support_type");
     int support_threshold_angle = obj_cfg.option("support_threshold_angle") ? obj_cfg.opt_int("support_threshold_angle") : glb_cfg.opt_int("support_threshold_angle");
 
-    bool auto_support = enable_support &&
-        (support_type == SupportType::stHybridAuto ||
-         support_type == SupportType::stTreeAuto ||
-         support_type == SupportType::stNormalAuto);
+    bool auto_support = enable_support && is_auto(support_type);
     return auto_support ? support_threshold_angle : 0;
 }
 
@@ -725,8 +722,7 @@ void GLGizmoFdmSupports::init_print_instance()
 
     const PrintObjectConfig& config = m_print_instance.print_object->config();
     m_angle_threshold_deg = config.support_angle;
-    m_is_tree_support = config.enable_support.value &&
-        (config.support_type.value == stTreeAuto || config.support_type.value == stTree || config.support_type.value==stHybridAuto);
+    m_is_tree_support = config.enable_support.value && is_tree(config.support_type.value);
     BOOST_LOG_TRIVIAL(info) << __FUNCTION__ << ",get support_angle "<< m_angle_threshold_deg<<", is_tree "<<m_is_tree_support;
 
     return;

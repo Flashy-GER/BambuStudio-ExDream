@@ -250,8 +250,12 @@ AboutDialog::AboutDialog()
         #endif
         version_font.SetPointSize(FromDIP(16));
         version->SetFont(version_font);
-        version->SetForegroundColour(wxColour("#FFFFFE"));
-        version->SetBackgroundColour(wxColour("#00AF42"));
+        version->SetForegroundColour(wxColour("#FFFFFD"));
+         if(wxGetApp().dark_mode())
+             version->SetBackgroundColour(wxColour("#00675b"));
+         else
+            version->SetBackgroundColour(wxColour("#009688"));
+
         vesizer->Add(version, 0, wxALL | wxALIGN_CENTER_HORIZONTAL, FromDIP(5));
         vesizer->Add(0, 0, 1, wxEXPAND, FromDIP(5));
     }
@@ -308,7 +312,7 @@ AboutDialog::AboutDialog()
     copyright_hor_sizer->Add(copyright_ver_sizer, 0, wxALL,5);
     copyright_hor_sizer->Add( 0, 0, 0, wxLEFT, FromDIP(120));
 
-    wxStaticText *html_text = new wxStaticText(this, wxID_ANY, "Copyright(C) 2021-2022 Bambu Lab", wxDefaultPosition, wxDefaultSize);
+    wxStaticText *html_text = new wxStaticText(this, wxID_ANY, "Copyright(C) 2021-2023 Lunkuo All Rights Reserved", wxDefaultPosition, wxDefaultSize);
     html_text->SetForegroundColour(wxColour(107, 107, 107));
 
     copyright_ver_sizer->Add(html_text, 0, wxALL , 0);

@@ -159,7 +159,7 @@ void ConfigManipulation::check_filament_max_volumetric_speed(DynamicPrintConfig 
         apply(config, &new_conf);
         is_msg_dlg_already_exist = false;
     }
- 
+
 }
 
 void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, const bool is_global_config)
@@ -271,6 +271,7 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
     }
 
     double sparse_infill_density = config->option<ConfigOptionPercent>("sparse_infill_density")->value;
+    auto timelapse_type = config->opt_enum<TimelapseType>("timelapse_type");
 
     if (config->opt_bool("spiral_mode") &&
         ! (config->opt_int("wall_loops") == 1 &&
@@ -279,12 +280,12 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
            ! config->opt_bool("enable_support") &&
            config->opt_int("enforce_support_layers") == 0 &&
            config->opt_bool("ensure_vertical_shell_thickness") &&
-           ! config->opt_bool("detect_thin_wall")))
+           ! config->opt_bool("detect_thin_wall") &&
+            config->opt_enum<TimelapseType>("timelapse_type") == TimelapseType::tlTraditional))
     {
-        wxString msg_text = _(L("Spiral mode only works when wall loops is 1, \n"
-                                "support is disabled, top shell layers is 0 and sparse infill density is 0\n"));
+        wxString msg_text = _(L("Spiral mode only works when wall loops is 1, support is disabled, top shell layers is 0, sparse infill density is 0 and timelapse type is traditional"));
         if (is_global_config)
-            msg_text += "\n" + _(L("Change these settings automatically? \n"
+            msg_text += "\n\n" + _(L("Change these settings automatically? \n"
                                      "Yes - Change these settings and enable spiral mode automatically\n"
                                      "No  - Give up using spiral mode this time"));
         MessageDialog dialog(m_msg_dlg_parent, msg_text, "",
@@ -301,7 +302,9 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
             new_conf.set_key_value("enforce_support_layers", new ConfigOptionInt(0));
             new_conf.set_key_value("ensure_vertical_shell_thickness", new ConfigOptionBool(true));
             new_conf.set_key_value("detect_thin_wall", new ConfigOptionBool(false));
+            new_conf.set_key_value("timelapse_type", new ConfigOptionEnum<TimelapseType>(tlTraditional));
             sparse_infill_density = 0;
+            timelapse_type = TimelapseType::tlTraditional;
             support = false;
         }
         else {
@@ -310,6 +313,8 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
         apply(config, &new_conf);
         if (cb_value_change) {
             cb_value_change("sparse_infill_density", sparse_infill_density);
+            int timelapse_type_int = (int)timelapse_type;
+            cb_value_change("timelapse_type", timelapse_type_int);
             if (!support)
                 cb_value_change("enable_support", false);
         }
@@ -318,31 +323,30 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
 
     //BBS
     if (config->opt_enum<PerimeterGeneratorType>("wall_generator") == PerimeterGeneratorType::Arachne &&
-        config->opt_bool("enable_overhang_speed"))
+        config->opt_bool("overhang_speed_classic"))
     {
-        wxString msg_text = _(L("Arachne engine only works when overhang slowing down is disabled.\n"
-                               "This may cause decline in the quality of overhang surface when print fastly\n"));
+        wxString msg_text = _(L("Arachne engine doesn't work with classic overhang speed mode.\n")) + "\n";
         if (is_global_config)
-            msg_text += "\n" + _(L("Disable overhang slowing down automatically? \n"
-                "Yes - Enable arachne and disable overhang slowing down\n"
+            msg_text += "\n" + _(L("Turn off classic mode automatically? \n"
+                "Yes - Enable arachne with classic mode off\n"
                 "No  - Give up using arachne this time"));
         MessageDialog dialog(m_msg_dlg_parent, msg_text, "",
             wxICON_WARNING | (is_global_config ? wxYES | wxNO : wxOK));
         DynamicPrintConfig new_conf = *config;
         is_msg_dlg_already_exist = true;
         auto answer = dialog.ShowModal();
-        bool enable_overhang_slow_down = true;
+        bool enable_overhang_slow_down_legacy = false;
         if (!is_global_config || answer == wxID_YES) {
-            new_conf.set_key_value("enable_overhang_speed", new ConfigOptionBool(false));
-            enable_overhang_slow_down = false;
+            new_conf.set_key_value("overhang_speed_classic", new ConfigOptionBool(false));
+            enable_overhang_slow_down_legacy = true;
         }
         else {
             new_conf.set_key_value("wall_generator", new ConfigOptionEnum<PerimeterGeneratorType>(PerimeterGeneratorType::Classic));
         }
         apply(config, &new_conf);
         if (cb_value_change) {
-            if (!enable_overhang_slow_down)
-                cb_value_change("enable_overhang_speed", false);
+            if (!enable_overhang_slow_down_legacy)
+                cb_value_change("overhang_speed_classic", false);
         }
         is_msg_dlg_already_exist = false;
     }
@@ -442,7 +446,7 @@ void ConfigManipulation::update_print_fff_config(DynamicPrintConfig* config, con
                 if (is_global_config)
                     msg_text += "\n" + _L("Switch to rectilinear pattern?\n"
                                           "Yes - switch to rectilinear pattern automaticlly\n"
-                                          "No  - reset density to default non 100% value automaticlly\n");
+                                          "No  - reset density to default non 100% value automaticlly") + "\n";
                 MessageDialog dialog(m_msg_dlg_parent, msg_text, "",
                                                   wxICON_WARNING | (is_global_config ? wxYES | wxNO : wxOK) );
                 DynamicPrintConfig new_conf = *config;
@@ -504,6 +508,10 @@ void ConfigManipulation::apply_null_fff_config(DynamicPrintConfig *config, std::
 
 void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig *config, const bool is_global_config)
 {
+    PresetBundle *preset_bundle  = wxGetApp().preset_bundle;
+    //SoftFever
+    auto gcflavor = preset_bundle->printers.get_edited_preset().config.option<ConfigOptionEnum<GCodeFlavor>>("gcode_flavor")->value;
+    
     bool have_perimeters = config->opt_int("wall_loops") > 0;
     for (auto el : { "ensure_vertical_shell_thickness", "detect_thin_wall", "detect_overhang_wall",
                     "seam_position", "wall_infill_order", "outer_wall_line_width",
@@ -544,7 +552,7 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig *config, co
 
     bool have_default_jerk = config->opt_float("default_jerk") > 0;
 
-    for (auto el : { "outer_wall_jerk", "inner_wall_jerk", "initial_layer_jerk", "top_surface_jerk","travel_jerk" })
+    for (auto el : { "outer_wall_jerk", "inner_wall_jerk", "initial_layer_jerk", "top_surface_jerk","travel_jerk", "infill_jerk"})
         toggle_field(el, have_default_jerk);
 
     bool have_skirt = config->opt_int("skirt_loops") > 0;
@@ -574,19 +582,16 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig *config, co
                     "support_type", "support_on_build_plate_only", "support_critical_regions_only",
                     "support_object_xy_distance", "independent_support_layer_height"})
         toggle_field(el, have_support_material);
-    toggle_field("support_threshold_angle", have_support_material && (support_type == stNormalAuto || support_type == stTreeAuto || support_type==stHybridAuto));
+    toggle_field("support_threshold_angle", have_support_material && is_auto(support_type));
     //toggle_field("support_closing_radius", have_support_material && support_style == smsSnug);
 
+    bool support_is_tree = config->opt_bool("enable_support") && is_tree(support_type);
     for (auto el : {"tree_support_branch_angle", "tree_support_wall_count", "tree_support_branch_distance", "tree_support_branch_diameter"})
-        toggle_field(el, config->opt_bool("enable_support") && (support_type == stTreeAuto || support_type == stTree || support_type == stHybridAuto));
+        toggle_field(el, support_is_tree);
 
     // hide tree support settings when normal is selected
-    bool support_is_tree = std::set<SupportType>{stTreeAuto, stHybridAuto, stTree}.count(support_type) != 0;
-    toggle_line("tree_support_branch_distance", support_is_tree);
-    toggle_line("tree_support_branch_diameter", support_is_tree);
-    toggle_line("tree_support_branch_angle", support_is_tree);
-    toggle_line("tree_support_wall_count", support_is_tree);
-    toggle_line("max_bridge_length", support_is_tree);
+    for (auto el : {"tree_support_branch_angle", "tree_support_wall_count", "tree_support_branch_distance", "tree_support_branch_diameter", "max_bridge_length"})
+        toggle_line(el, support_is_tree);
 
     // tree support use max_bridge_length instead of bridge_no_support
     toggle_line("bridge_no_support", !support_is_tree);
@@ -607,9 +612,9 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig *config, co
     toggle_field("inner_wall_line_width", have_perimeters || have_skirt || have_brim);
     toggle_field("support_filament", have_support_material || have_skirt);
 
-    toggle_field("raft_contact_distance", have_raft && !have_support_soluble);
-    for (auto el : { "raft_expansion" })
-        toggle_field(el, have_raft);
+    toggle_line("raft_contact_distance", have_raft && !have_support_soluble);
+    for (auto el : { "raft_first_layer_expansion", "raft_first_layer_density"})
+        toggle_line(el, have_raft);
 
     bool has_ironing = (config->opt_enum<IroningType>("ironing_type") != IroningType::NoIroning);
     for (auto el : { "ironing_flow", "ironing_spacing", "ironing_speed" })
@@ -633,7 +638,9 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig *config, co
     toggle_line("max_travel_detour_distance", have_avoid_crossing_perimeters);
 
     bool has_overhang_speed = config->opt_bool("enable_overhang_speed");
-    for (auto el : { "overhang_1_4_speed", "overhang_2_4_speed", "overhang_3_4_speed", "overhang_4_4_speed"})
+    for (auto el :
+         {"overhang_speed_classic", "overhang_1_4_speed",
+          "overhang_2_4_speed", "overhang_3_4_speed", "overhang_4_4_speed"})
         toggle_line(el, has_overhang_speed);
 
     toggle_line("flush_into_objects", !is_global_config);
@@ -643,7 +650,6 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig *config, co
         toggle_line(el, has_fuzzy_skin);
 
     // C11 printer is not support smooth timelapse
-    PresetBundle *preset_bundle  = wxGetApp().preset_bundle;
     std::string str_preset_type = preset_bundle->printers.get_edited_preset().get_printer_type(preset_bundle);
     toggle_field("timelapse_type", str_preset_type != "C11");
 
@@ -652,8 +658,17 @@ void ConfigManipulation::toggle_print_fff_options(DynamicPrintConfig *config, co
         "min_feature_size", "min_bead_width", "wall_distribution_count" })
         toggle_line(el, have_arachne);
     toggle_field("detect_thin_wall", !have_arachne);
-    toggle_field("enable_overhang_speed", !have_arachne);
     toggle_field("only_one_wall_top", !have_arachne);
+    
+    // SoftFever
+    auto is_role_based_wipe_speed = config->opt_bool("role_based_wipe_speed");
+    toggle_field("wipe_speed",!is_role_based_wipe_speed);
+    
+    // SoftFever
+    for (auto el : {"accel_to_decel_enable", "accel_to_decel_factor"})
+        toggle_line(el, gcflavor == gcfKlipper);
+    if(gcflavor == gcfKlipper)
+        toggle_field("accel_to_decel_factor", config->opt_bool("accel_to_decel_enable"));
 }
 
 void ConfigManipulation::update_print_sla_config(DynamicPrintConfig* config, const bool is_global_config/* = false*/)
